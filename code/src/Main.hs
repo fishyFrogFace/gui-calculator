@@ -15,18 +15,21 @@ main = do
   void initGUI
   window <- windowNew
   set window [ windowTitle         := "Calculator"
-             , windowResizable     := False
-             , windowDefaultWidth  := 230
-             , windowDefaultHeight := 250 ]
+             , windowResizable     := True
+             , windowDefaultWidth  := 430
+             , windowDefaultHeight := 500 ]
   display <- entryNew
   set display [ entryEditable := False
               , entryXalign   := 1 -- makes contents right-aligned
               , entryText     := "0" ]
+  font <- fontDescriptionFromString "30"
+  widgetModifyFont display (Just font)
   grid <- gridNew
   gridSetRowHomogeneous grid True
+  gridSetColumnHomogeneous grid True
   let attach x y w h item = gridAttach grid item x y w h
       mkBtn = mkButton st display
-  attach 0 0 5 1 display
+  vbox <- vBoxNew False 0 
   mkBtn "MC"  id >>= attach 0 1 1 1
   mkBtn "MR"  id >>= attach 1 1 1 1
   mkBtn "MS"  id >>= attach 2 1 1 1
@@ -55,7 +58,9 @@ main = do
   mkBtn "0"   (enterDigit '0') >>= attach 0 6 2 1
   mkBtn "."   enterDot >>= attach 2 6 1 1
   mkBtn "+"   (operator Addition) >>= attach 3 6 1 1
-  containerAdd window grid
+  boxPackStart vbox display PackNatural 0
+  boxPackStart vbox grid PackGrow 0
+  containerAdd window vbox
   window `on` deleteEvent $ do
     liftIO mainQuit
     return False
@@ -194,7 +199,10 @@ mkButton
   -> IO Button         -- ^ Resulting button object
 mkButton st display label mutateState = do
   btn <- buttonNew
-  set btn [ buttonLabel := label ]
+  set btn [ buttonLabel := label
+          , widgetExpand := True ]
+  font <- fontDescriptionFromString "16" 
+  widgetModifyFont btn (Just font)
   btn `on` buttonActivated $ do
     value <- atomicModifyIORef st $ \x -> let r = mutateState x in (r, r)
     updateDisplay display value
